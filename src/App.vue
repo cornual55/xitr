@@ -12,7 +12,6 @@ export default {
       brand_requests: "",
       partners: [],
       results: [],
-      demand: [],
       reg_sell: false,
       reg_appoint: false,
       low_temp: false,
@@ -42,14 +41,14 @@ export default {
           rule: () =>
             (this.conditions.large_client_base.value ||
               this.conditions.competition.value) &&
-            (this.conditions.low_demand || this.low_temp),
+            (this.conditions.low_demand.value || this.low_temp),
         },
         reduc: {
           value: false,
           name: "Если низкий спрос на товар И низкий темп роста экономики) И проблемы с поиском новых поставщиков И ценовая конкуренция ИЛИ слабые техники продаж ИЛИ отсутствие бюджета на маркетинг), значит сокращение = истина",
           rule: () =>
             this.conditions.low_demand.value &&
-            this.conditions.low_temp.value &&
+            this.low_temp.value &&
             this.postavschic_problems &&
             (this.conditions.competition.value ||
               this.conditions.weak_technique.value ||
@@ -88,7 +87,7 @@ export default {
         low_demand: {
           value: false,
           name: "спрос на товар снизился на 40%, значит низкий спрос на товар = истина",
-          rule: () => (this.demand[1] / this.demand[0]) * 100 <= 60,
+          rule: () => (this.demand_data[1] / this.demand_data[0]) * 100 <= 60,
         },
         weak_technique: {
           value: false,
@@ -109,11 +108,12 @@ export default {
         this.find_strat = false;
         this.results = [];
         Object.values(this.conditions).forEach((condition) => {
+          condition.value = false;
           Object.values(this.strategies).forEach((strateg) => {
-            if (strateg.rule()) {
+            if (strateg.rule() && !this.find_strat) {
               strateg.value = true;
+              this.results.push(strateg);
               this.find_strat = true;
-              return;
             } else {
               strateg.value = false;
             }
@@ -122,6 +122,8 @@ export default {
           if (condition.rule() && !this.find_strat) {
             condition.value = true;
             this.results.push(condition);
+          } else {
+            condition.value = false;
           }
         });
       }
@@ -237,15 +239,6 @@ export default {
         </td>
       </tr>
       <tr>
-        <td>Спрос</td>
-        <td>
-          <input type="text" @keypress="checkKey($event)" v-model="demand[1]" />
-        </td>
-        <td>
-          <input type="text" @keypress="checkKey($event)" v-model="demand[0]" />
-        </td>
-      </tr>
-      <tr>
         <td>Затраты на маркетинг</td>
         <td>
           <input type="text" @keypress="checkKey($event)" v-model="mark[0]" />
@@ -291,24 +284,6 @@ export default {
   <div>
     <div v-for="result in results">
       {{ result.name }}
-    </div>
-  </div>
-  <div>
-    <div v-if="strategies.integration.value === true">
-      <div>{{ strategies.integration.name }}</div>
-      <b>Вам подходит стратегия интеграции</b>
-    </div>
-    <div v-if="strategies.growth.value">
-      <div>{{ strategies.growth.name }}</div>
-      <b>Вам подходит стратегия концентрированного роста</b>
-    </div>
-    <div v-if="strategies.dever.value">
-      <div>{{ strategies.dever.name }}</div>
-      <b>Вам подходит стратегия диверсификации</b>
-    </div>
-    <div v-if="strategies.reduc.value">
-      <div>{{ strategies.reduc.name }}</div>
-      <b>Вам подходит стратегия сокращения</b>
     </div>
   </div>
 </template>
