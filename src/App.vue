@@ -17,23 +17,43 @@ export default {
       reg_appoint: false,
       low_temp: false,
       mark: [],
+      find_strat: false,
       postavschic_problems: false,
       strategies: {
         integration: {
           value: false,
           name: "уход с рынка конкурентов И большая клиентская база И развитие информационных технологий в отрасли ИЛИ ценовая конкуренция, значит интеграция = истина",
+          rule: () =>
+            this.conditions.leave.value &&
+            this.conditions.large_client_base.value &&
+            (this.development || this.conditions.competition.value),
         },
         growth: {
           value: false,
           name: "известное на рынке имя И появление новых партнеров И развитие информационных технологий в отрасли ИЛИ большая клиентская база, значит концентрированный рост = истина",
+          rule: () =>
+            this.conditions.popularity.value &&
+            this.conditions.new_partners.value &&
+            (this.development || this.conditions.large_client_base.value),
         },
         dever: {
           value: false,
           name: "Если (большая клиентская база = истина ИЛИ ценовая конкуренция = истина) И (низкий спрос на товар ИЛИ низкий темп роста экономики), значит диверсификация = истина",
+          rule: () =>
+            (this.conditions.large_client_base.value ||
+              this.conditions.competition.value) &&
+            (this.conditions.low_demand || this.low_temp),
         },
         reduc: {
           value: false,
           name: "Если низкий спрос на товар И низкий темп роста экономики) И проблемы с поиском новых поставщиков И ценовая конкуренция ИЛИ слабые техники продаж ИЛИ отсутствие бюджета на маркетинг), значит сокращение = истина",
+          rule: () =>
+            this.conditions.low_demand.value &&
+            this.conditions.low_temp.value &&
+            this.postavschic_problems &&
+            (this.conditions.competition.value ||
+              this.conditions.weak_technique.value ||
+              this.conditions.marketing_no_budget.value),
         },
       },
       conditions: {
@@ -86,36 +106,20 @@ export default {
   methods: {
     calculate() {
       {
+        this.find_strat = false;
         this.results = [];
         Object.values(this.conditions).forEach((condition) => {
-          this.conditions.leave.value &&
-          this.conditions.large_client_base.value &&
-          (this.development || this.conditions.competition.value)
-            ? (this.strategies.integration.value = true)
-            : (this.strategies.integration.value = false);
+          Object.values(this.strategies).forEach((strateg) => {
+            if (strateg.rule()) {
+              strateg.value = true;
+              this.find_strat = true;
+              return;
+            } else {
+              strateg.value = false;
+            }
+          });
 
-          this.conditions.popularity.value &&
-          this.conditions.new_partners.value &&
-          (this.development || this.conditions.large_client_base.value)
-            ? (this.strategies.growth.value = true)
-            : (this.strategies.growth.value = false);
-
-          (this.conditions.large_client_base.value ||
-            this.conditions.competition.value) &&
-          (this.conditions.low_demand || this.low_temp)
-            ? (this.strategies.dever.value = true)
-            : (this.strategies.dever.value = false)(
-                this.conditions.low_demand.value &&
-                  this.conditions.low_temp.value &&
-                  this.postavschic_problems &&
-                  (this.conditions.competition.value ||
-                    this.conditions.weak_technique.value ||
-                    this.conditions.marketing_no_budget.value)
-              )
-            ? (this.strategies.reduc.value = true)
-            : (this.strategies.reduc.value = false);
-
-          if (condition.rule()) {
+          if (condition.rule() && !this.find_strat) {
             condition.value = true;
             this.results.push(condition);
           }
