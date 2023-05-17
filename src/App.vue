@@ -11,6 +11,7 @@ export default {
       site_traffic: "",
       brand_requests: "",
       partners: [],
+      results: [],
       strategies: {
         integration: {
           value: false,
@@ -56,13 +57,11 @@ export default {
   methods: {
     calculate() {
       {
-        // Выбор стратегии
-
-        this.conditions.forEach((condition) => {
+        this.results = [];
+        Object.values(this.conditions).forEach((condition) => {
           this.conditions.leave.value &&
           this.conditions.large_client_base.value &&
-          (this.conditions.development.value ||
-            this.conditions.competition.value)
+          (this.development || this.conditions.competition.value)
             ? (this.strategies.integration.value = true)
             : (this.strategies.integration.value = false);
           this.conditions.popularity.value &&
@@ -73,7 +72,8 @@ export default {
             : (this.strategies.growth.value = false);
 
           if (condition.rule()) {
-            console.log("YES YES YES");
+            condition.value = true;
+            this.results.push(condition);
           }
         });
         // Сравниваем базу фактов с базой знаний
@@ -210,8 +210,15 @@ export default {
     <button @click="calculate">Узнать стратегию</button>
   </form>
   <div>
-    <div v-if="strategies.integration">Вам подходит стратегия интеграции</div>
-    <div v-if="strategies.growth">
+    <div v-for="result in results">
+      {{ result.name }}
+    </div>
+  </div>
+  <div>
+    <div v-if="strategies.integration.value === true">
+      <b>Вам подходит стратегия интеграции</b>
+    </div>
+    <div v-if="strategies.growth.value">
       Вам подходит стратегия концентрированного роста
     </div>
   </div>
