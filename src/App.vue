@@ -12,14 +12,28 @@ export default {
       brand_requests: "",
       partners: [],
       results: [],
+      demand: [],
+      reg_sell: false,
+      reg_appoint: false,
+      low_temp: false,
+      mark: [],
+      postavschic_problems: false,
       strategies: {
         integration: {
           value: false,
-          name: "уход с рынка конкурентов И большая клиентская база И развитие информационных технологий в отрасли ИЛИ ценовая конкуренция, значит Интеграция = истина",
+          name: "уход с рынка конкурентов И большая клиентская база И развитие информационных технологий в отрасли ИЛИ ценовая конкуренция, значит интеграция = истина",
         },
         growth: {
           value: false,
           name: "известное на рынке имя И появление новых партнеров И развитие информационных технологий в отрасли ИЛИ большая клиентская база, значит концентрированный рост = истина",
+        },
+        dever: {
+          value: false,
+          name: "Если (большая клиентская база = истина ИЛИ ценовая конкуренция = истина) И (низкий спрос на товар ИЛИ низкий темп роста экономики), значит диверсификация = истина",
+        },
+        reduc: {
+          value: false,
+          name: "Если низкий спрос на товар И низкий темп роста экономики) И проблемы с поиском новых поставщиков И ценовая конкуренция ИЛИ слабые техники продаж ИЛИ отсутствие бюджета на маркетинг), значит сокращение = истина",
         },
       },
       conditions: {
@@ -51,6 +65,21 @@ export default {
           name: "количество партнеров увеличилось на 20%, значит появление новых партнеров = истина",
           rule: () => (this.partners[1] / this.partners[0]) * 100 >= 120,
         },
+        low_demand: {
+          value: false,
+          name: "спрос на товар снизился на 40%, значит низкий спрос на товар = истина",
+          rule: () => (this.demand[1] / this.demand[0]) * 100 <= 60,
+        },
+        weak_technique: {
+          value: false,
+          name: "отсутствует регламент по продажам ИЛИ нет регламента подтверждения встреч, значит слабые техники продаж = истина",
+          rule: () => this.reg_appoint || this.reg_sell,
+        },
+        marketing_no_budget: {
+          value: false,
+          name: "затраты на маркетинг > бюджет на маркетинг, отсутствие бюджета на маркетинг = истина",
+          rule: () => this.mark[0] > this.mark[1],
+        },
       },
     };
   },
@@ -64,24 +93,33 @@ export default {
           (this.development || this.conditions.competition.value)
             ? (this.strategies.integration.value = true)
             : (this.strategies.integration.value = false);
+
           this.conditions.popularity.value &&
           this.conditions.new_partners.value &&
-          (this.conditions.development.value ||
-            this.conditions.large_client_base.value)
+          (this.development || this.conditions.large_client_base.value)
             ? (this.strategies.growth.value = true)
             : (this.strategies.growth.value = false);
+
+          (this.conditions.large_client_base.value ||
+            this.conditions.competition.value) &&
+          (this.conditions.low_demand || this.low_temp)
+            ? (this.strategies.dever.value = true)
+            : (this.strategies.dever.value = false)(
+                this.conditions.low_demand.value &&
+                  this.conditions.low_temp.value &&
+                  this.postavschic_problems &&
+                  (this.conditions.competition.value ||
+                    this.conditions.weak_technique.value ||
+                    this.conditions.marketing_no_budget.value)
+              )
+            ? (this.strategies.reduc.value = true)
+            : (this.strategies.reduc.value = false);
 
           if (condition.rule()) {
             condition.value = true;
             this.results.push(condition);
           }
         });
-        // Сравниваем базу фактов с базой знаний
-        // ( ? this.conditions.leave.value = true : this.conditions.leave.value = false;
-        //  ? this.conditions.large_client_base.value = true : this.conditions.large_client_base.value = false;
-        //  ? this.conditions.competition.value = true : this.conditions.competition.value = false;
-        //  ? this.conditions.popularity.value = true : this.conditions.popularity.value = true
-        //  ? this.conditions.new_partners.value = true : this.conditions.new_partners.value = false
       }
     },
     checkKey(evt) {
@@ -194,6 +232,27 @@ export default {
           />
         </td>
       </tr>
+      <tr>
+        <td>Спрос</td>
+        <td>
+          <input type="text" @keypress="checkKey($event)" v-model="demand[1]" />
+        </td>
+        <td>
+          <input type="text" @keypress="checkKey($event)" v-model="demand[0]" />
+        </td>
+      </tr>
+      <tr>
+        <td>Затраты на маркетинг</td>
+        <td>
+          <input type="text" @keypress="checkKey($event)" v-model="mark[0]" />
+        </td>
+      </tr>
+      <tr>
+        <td>Бюджет на маркетинг</td>
+        <td>
+          <input type="text" @keypress="checkKey($event)" v-model="mark[1]" />
+        </td>
+      </tr>
     </table>
     <div class="second">
       <div>
@@ -206,6 +265,22 @@ export default {
         <input type="checkbox" v-model="development" id="c2" />
         <label for="c2">В отрасли развиваются информационные технологии</label>
       </div>
+      <div>
+        <input type="checkbox" v-model="low_temp" id="c3" />
+        <label for="c3">низкий темп роста экономики</label>
+      </div>
+      <div>
+        <input type="checkbox" v-model="reg_sell" id="c4" />
+        <label for="c4">отсутствует регламент продаж</label>
+      </div>
+      <div>
+        <input type="checkbox" v-model="reg_appoint" id="c5" />
+        <label for="c5">отсутствует регламент встреч</label>
+      </div>
+      <div>
+        <input type="checkbox" v-model="postavschic_problems" id="c6" />
+        <label for="c6">проблемы с поиском новых поставщиков</label>
+      </div>
     </div>
     <button @click="calculate">Узнать стратегию</button>
   </form>
@@ -216,10 +291,20 @@ export default {
   </div>
   <div>
     <div v-if="strategies.integration.value === true">
+      <div>{{ strategies.integration.name }}</div>
       <b>Вам подходит стратегия интеграции</b>
     </div>
     <div v-if="strategies.growth.value">
-      Вам подходит стратегия концентрированного роста
+      <div>{{ strategies.growth.name }}</div>
+      <b>Вам подходит стратегия концентрированного роста</b>
+    </div>
+    <div v-if="strategies.dever.value">
+      <div>{{ strategies.dever.name }}</div>
+      <b>Вам подходит стратегия диверсификации</b>
+    </div>
+    <div v-if="strategies.reduc.value">
+      <div>{{ strategies.reduc.name }}</div>
+      <b>Вам подходит стратегия сокращения</b>
     </div>
   </div>
 </template>
