@@ -9,6 +9,7 @@ export default {
       advertising: false,
       development: false,
       site_traffic: "",
+      result_strategy: "",
       brand_requests: "",
       partners: [],
       results: [],
@@ -21,7 +22,8 @@ export default {
       strategies: {
         integration: {
           value: false,
-          name: "уход с рынка конкурентов И большая клиентская база И развитие информационных технологий в отрасли ИЛИ ценовая конкуренция, значит интеграция = истина",
+          name: "уход с рынка конкурентов И большая клиентская база И развитие информационных технологий в отрасли ИЛИ ценовая конкуренция, значит интеграция = истина.",
+          name2: "Вам подходит стратегия интеграции",
           rule: () =>
             this.conditions.leave.value &&
             this.conditions.large_client_base.value &&
@@ -29,7 +31,8 @@ export default {
         },
         growth: {
           value: false,
-          name: "известное на рынке имя И появление новых партнеров И развитие информационных технологий в отрасли ИЛИ большая клиентская база, значит концентрированный рост = истина",
+          name: "известное на рынке имя И появление новых партнеров И развитие информационных технологий в отрасли ИЛИ большая клиентская база, значит концентрированный рост = истина.",
+          name2: "Вам подходит стратегия концентрированного роста",
           rule: () =>
             this.conditions.popularity.value &&
             this.conditions.new_partners.value &&
@@ -37,7 +40,8 @@ export default {
         },
         dever: {
           value: false,
-          name: "Если (большая клиентская база = истина ИЛИ ценовая конкуренция = истина) И (низкий спрос на товар ИЛИ низкий темп роста экономики), значит диверсификация = истина",
+          name: "Если (большая клиентская база = истина ИЛИ ценовая конкуренция = истина) И (низкий спрос на товар ИЛИ низкий темп роста экономики), значит диверсификация = истина.",
+          name2: "Вам подходит стратегия диверсификации",
           rule: () =>
             (this.conditions.large_client_base.value ||
               this.conditions.competition.value) &&
@@ -45,7 +49,8 @@ export default {
         },
         reduc: {
           value: false,
-          name: "Если низкий спрос на товар И низкий темп роста экономики) И проблемы с поиском новых поставщиков И ценовая конкуренция ИЛИ слабые техники продаж ИЛИ отсутствие бюджета на маркетинг), значит сокращение = истина",
+          name: "Если низкий спрос на товар И низкий темп роста экономики) И проблемы с поиском новых поставщиков И ценовая конкуренция ИЛИ слабые техники продаж ИЛИ отсутствие бюджета на маркетинг), значит сокращение = истина.",
+          name2: "Вам подходит стратегия сокращения",
           rule: () =>
             this.conditions.low_demand.value &&
             this.low_temp.value &&
@@ -58,7 +63,7 @@ export default {
       conditions: {
         leave: {
           value: false,
-          name: "количество конкурентов предыдущего месяца меньше текущего количества конкурентов на 20%, значит уход с рынка конкурентов = истина",
+          name: "(количество конкурентов предыдущего месяца меньше текущего количества конкурентов на 20%, значит уход с рынка конкурентов = истина",
           rule: () => (this.leave_data[0] / this.leave_data[1]) * 100 <= 80,
         },
         large_client_base: {
@@ -76,7 +81,7 @@ export default {
         },
         popularity: {
           value: false,
-          name: "посещаемость сайта в сутки > 1000 человек) И (запросы в интернете связанные с брендом в месяц > 7000, значит известное на рынке имя = истина",
+          name: "посещаемость сайта в сутки > 1000 человек И запросы в интернете связанные с брендом в месяц > 7000, значит известное на рынке имя = истина",
           rule: () => this.site_traffic > 1000 && this.brand_requests > 7000,
         },
         new_partners: {
@@ -105,25 +110,24 @@ export default {
   methods: {
     calculate() {
       {
+        this.result_strategy = "";
         this.find_strat = false;
         this.results = [];
         Object.values(this.conditions).forEach((condition) => {
           condition.value = false;
+        });
+        Object.values(this.conditions).forEach((condition) => {
           Object.values(this.strategies).forEach((strateg) => {
             if (strateg.rule() && !this.find_strat) {
-              strateg.value = true;
+              this.result_strategy = strateg.name2;
               this.results.push(strateg);
               this.find_strat = true;
-            } else {
-              strateg.value = false;
             }
           });
 
           if (condition.rule() && !this.find_strat) {
             condition.value = true;
             this.results.push(condition);
-          } else {
-            condition.value = false;
           }
         });
       }
@@ -141,7 +145,7 @@ export default {
 </script>
 
 <template>
-  <form @submit.prevent>
+  <form style="width: 100%" @submit.prevent>
     <table>
       <tr>
         <th></th>
@@ -279,12 +283,15 @@ export default {
         <label for="c6">проблемы с поиском новых поставщиков</label>
       </div>
     </div>
-    <button @click="calculate">Узнать стратегию</button>
+    <button style="border: 1px solid; margin: 14px" @click="calculate">
+      Узнать стратегию
+    </button>
   </form>
   <div>
-    <div v-for="result in results">
+    <div style="border-top: 1px solid; padding: 5px" v-for="result in results">
       {{ result.name }}
     </div>
+    <b style="font-size: 1.5rem">{{ result_strategy }}</b>
   </div>
 </template>
 
